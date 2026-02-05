@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>날씨 어플</title>
+    <!-- Google Fonts for Premium Look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script> <!-- Optional for icons -->
+</head>
+<body>
+
+    <!-- Loading Screen -->
+    <div id="loading-screen">
+        <div class="loader"></div>
+        <p class="loading-text">날씨 정보를 찾고 있습니다...</p>
+    </div>
+
+    <!-- Main Card Container -->
+    <div class="container">
+        <div class="weather-card">
+            
+            <!-- Top Section: Location & Date -->
+            <div class="card-header">
+                <div class="location-box">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <h1 id="city-name">위치 확인 중...</h1>
+                </div>
+                <p id="current-date">---</p>
+            </div>
+
+            <!-- Middle Section: Dynamic Image -->
+            <div class="card-image-section">
+                <!-- Image will be inserted via JS or CSS background -->
+                <div id="weather-image-placeholder" class="image-container">
+                    <!-- Default or Loading Image -->
+                   <div class="image-skeleton"></div>
+                </div>
+            </div>
+
+            <!-- Bottom Section: Weather Info -->
+            <div class="card-footer">
+                <div class="temp-box">
+                    <span id="temperature">--</span><span class="unit">°C</span>
+                </div>
+                <div class="weather-desc-box">
+                    <p id="weather-description">날씨 상태</p>
+                </div>
+                
+                <!-- Additional Details Grid -->
+                <div class="details-grid">
+                    <div class="detail-item">
+                        <span class="label">강수확률</span>
+                        <span class="value" id="pop-value">--%</span>
+                    </div>
+                     <div class="detail-item">
+                        <span class="label">습도</span>
+                        <span class="value" id="reh-value">--%</span>
+                    </div>
+                     <div class="detail-item">
+                        <span class="label">풍속</span>
+                        <span class="value" id="wsd-value">-- m/s</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
