@@ -1,11 +1,18 @@
 export default async function handler(req, res) {
-    const { nx, ny } = req.query;
+    const { nx, ny, lat, lon } = req.query;
 
     if (!nx || !ny) {
         return res.status(400).json({ error: 'Missing coordinates (nx, ny)' });
     }
 
     const API_KEY = process.env.KMA_API_KEY; // Managed in Vercel Dashboard
+    
+    // Debug Logging
+    console.log("Loaded Env Keys:", Object.keys(process.env));
+
+    if (!API_KEY) {
+        return res.status(500).json({ error: "Server Configuration Error: KMA_API_KEY is missing." });
+    }
     
     // 1. Calculate Base Date & Time
     const now = new Date();
@@ -38,10 +45,18 @@ export default async function handler(req, res) {
     // IMPORTANT: In Vercel, usage of encoded key often safer, or decoding it.
     // Try sending with `serviceKey` query param.
     
+    // KMA API needs ServiceKey.
+    // Smart Handling: Check if user provided Encoded or Decoded key.
+    let serviceKey = API_KEY;
+    if (API_KEY.indexOf('%') === -1) {
+        // No % found, likely Decoded key. We must encode it.
+        serviceKey = encodeURIComponent(API_KEY);
+    }
+    // If % found, assume it is already Encoded (common from portal), usage is safe.
+
     const queryParams = new URLSearchParams({
-        serviceKey: API_KEY, // Ensure this is the DECODED key in Vercel env vars usually, or handle encoding
         pageNo: '1',
-        numOfRows: '1000', // Fetch enough data
+        numOfRows: '1000',
         dataType: type,
         base_date: baseDate,
         base_time: baseTime,
@@ -49,10 +64,8 @@ export default async function handler(req, res) {
         ny: ny
     }).toString();
 
-    // Note: Public Data Portal keys sometimes don't work with URLSearchParams encoding.
-    // Constructing manual string if needed, but let's try standard way first.
-    
-    const requestUrl = `${apiUrl}?${queryParams}`;
+    // Append serviceKey manually
+    const requestUrl = `${apiUrl}?serviceKey=${serviceKey}&${queryParams}`;
     console.log(`Requesting KMA API: ${baseDate} ${baseTime} (${nx}, ${ny})`);
 
     try {
@@ -66,11 +79,29 @@ export default async function handler(req, res) {
         const items = data.response.body.items.item;
         const processedData = parseForecastData(items, kstDate);
 
+        // 2. Get Location Name (Reverse Geocoding)
+        // KMA doesn't provide city name. We use OpenStreetMap (Nominatim) as a free fallback.
+        try {
+             if (lat && lon) {
+                 const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10&accept-language=ko`);
+                 const geoData = await geoRes.json();
+                 // prioritizing city > county > district
+                 processedData.locationName = geoData.address.city || geoData.address.county || geoData.address.borough || "알 수 없는 위치";
+             }
+        } catch (geoError) {
+            console.error("Geo Error:", geoError);
+            processedData.locationName = "위치 정보 없음";
+        }
+
         res.status(200).json(processedData);
 
     } catch (error) {
-        console.error("Vercel Function Error:", error);
-        res.status(500).json({ error: error.message });
+        console.error("Vercel Function Error Details:", error);
+        res.status(500).json({ 
+            error: "Internal Server Error", 
+            message: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined 
+        });
     }
 }
 

@@ -103,7 +103,14 @@ async function fetchWeatherData(nx, ny, lat, lon) {
     
     const response = await fetch(url);
     if (!response.ok) {
-        throw new Error(`API Request Failed: ${response.status}`);
+        let errorMsg = `API Request Failed: ${response.status}`;
+        try {
+            const errorData = await response.json();
+            errorMsg += ` - ${errorData.error || errorData.message || JSON.stringify(errorData)}`;
+        } catch (e) {
+            // response was not JSON
+        }
+        throw new Error(errorMsg);
     }
     return await response.json();
 }
@@ -143,25 +150,46 @@ function determineWeatherState(sky, pty) {
     // SKY: 1:Clear, 3:Cloudy, 4:Overcast
     
     let text = "맑음";
-    let imageUrl = "skyblue.jpg"; // Placeholder, user said they will provide images, using simple logical names or placeholders
+    let imageUrl = "images/sunny1.png"; // User requested sunny1.png
 
     // Priority: Precipitation > Sky
     if (pty > 0) {
         switch(parseInt(pty)) {
-            case 1: text = "비"; break;
-            case 2: text = "비/눈"; break;
-            case 3: text = "눈"; break;
-            case 4: text = "소나기"; break;
+            case 1: 
+                text = "비"; 
+                imageUrl = "images/rainy1.png"; 
+                break;
+            case 2: 
+                text = "비/눈"; 
+                imageUrl = "images/rainy_snow1.png"; 
+                break;
+            case 3: 
+                text = "눈"; 
+                imageUrl = "images/snow1.png"; 
+                break;
+            case 4: 
+                text = "소나기"; 
+                imageUrl = "images/shower1.png"; 
+                break;
         }
     } else {
         switch(parseInt(sky)) {
-            case 1: text = "맑음"; break;
-            case 3: text = "구름 많음"; break;
-            case 4: text = "흐림"; break;
+            case 1: 
+                text = "맑음"; 
+                imageUrl = "images/sunny1.png"; 
+                break;
+            case 3: 
+                text = "구름 많음"; 
+                imageUrl = "images/cloudy1.png"; 
+                break;
+            case 4: 
+                text = "흐림"; 
+                imageUrl = "images/overcast1.png"; 
+                break;
         }
     }
 
-    return { text, imageUrl: `images/${text}.jpg` }; // Assuming user will put images in 'images/' folder with these names
+    return { text, imageUrl };
 }
 
 function hideLoading() {
